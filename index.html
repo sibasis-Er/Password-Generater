@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Password Generator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f5f4f0;
+    --color-text-primary: #1a1a18;
+    --color-text-secondary: #5f5e5a;
+    --color-text-tertiary: #888780;
+    --color-border-tertiary: rgba(0,0,0,0.12);
+    --color-border-secondary: rgba(0,0,0,0.22);
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    --font-sans: system-ui, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-background-primary: #1e1e1c;
+      --color-background-secondary: #2a2a28;
+      --color-text-primary: #f0ede8;
+      --color-text-secondary: #a0a09a;
+      --color-text-tertiary: #6a6a65;
+      --color-border-tertiary: rgba(255,255,255,0.1);
+      --color-border-secondary: rgba(255,255,255,0.2);
+    }
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--color-background-secondary);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+
+  .pg-wrap { width: 100%; max-width: 480px; }
+
+  h1 {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    margin-bottom: 1.25rem;
+  }
+
+  .pg-card {
+    background: var(--color-background-primary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-lg);
+    padding: 1.25rem 1.5rem;
+  }
+
+  .pg-output {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-background-secondary);
+    border: 0.5px solid var(--color-border-tertiary);
+    border-radius: var(--border-radius-md);
+    padding: 12px 14px;
+    margin-bottom: 1.25rem;
+  }
+
+  .pg-password {
+    flex: 1;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: var(--color-text-primary);
+    word-break: break-all;
+    min-height: 22px;
+  }
+
+  .pg-copy {
+    background: none;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    padding: 6px 14px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: var(--font-sans);
+  }
+  .pg-copy:hover { background: var(--color-background-secondary); }
+
+  .pg-strength {
+    display: none;
+    gap: 4px;
+    margin-bottom: 1.25rem;
+    align-items: center;
+  }
+  .pg-strength.visible { display: flex; }
+
+  .pg-bar {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--color-border-tertiary);
+  }
+
+  .pg-strength-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    min-width: 72px;
+    text-align: right;
+  }
+
+  .pg-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 1rem;
+  }
+
+  .pg-label { font-size: 13px; color: var(--color-text-secondary); flex: 1; }
+  .pg-val { font-size: 13px; font-weight: 500; color: var(--color-text-primary); min-width: 28px; text-align: right; }
+
+  input[type="range"] {
+    flex: 2;
+    accent-color: #534AB7;
+    cursor: pointer;
+  }
+
+  .pg-toggle-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1.25rem;
+  }
+
+  .pg-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .pg-toggle input[type="checkbox"] {
+    accent-color: #534AB7;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+  }
+
+  .pg-gen {
+    width: 100%;
+    padding: 10px;
+    background: none;
+    border: 0.5px solid var(--color-border-secondary);
+    border-radius: var(--border-radius-md);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    font-family: var(--font-sans);
+  }
+  .pg-gen:hover { background: var(--color-background-secondary); }
+  .pg-gen:active { transform: scale(0.98); }
+
+  .pg-history-label {
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    margin: 1rem 0 6px;
+  }
+
+  .pg-hist-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    padding: 4px 0;
+    border-bottom: 0.5px solid var(--color-border-tertiary);
+  }
+
+  .pg-hist-copy {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    background: none;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    padding: 0;
+  }
+  .pg-hist-copy:hover { color: var(--color-text-primary); }
+</style>
+</head>
+<body>
+<div class="pg-wrap">
+  <h1>Password generator</h1>
+  <div class="pg-card">
+    <div class="pg-output">
+      <span class="pg-password" id="pw">Click generate to create a password</span>
+      <button class="pg-copy" id="copy-btn" onclick="copyPw()">Copy</button>
+    </div>
+
+    <div class="pg-strength" id="strength-row">
+      <div class="pg-bar" id="b1"></div>
+      <div class="pg-bar" id="b2"></div>
+      <div class="pg-bar" id="b3"></div>
+      <div class="pg-bar" id="b4"></div>
+      <span class="pg-strength-label" id="strength-label"></span>
+    </div>
+
+    <div class="pg-row">
+      <span class="pg-label">Length</span>
+      <input type="range" min="6" max="64" value="16" step="1" id="len"
+             oninput="document.getElementById('len-val').textContent=this.value" />
+      <span class="pg-val" id="len-val">16</span>
+    </div>
+
+    <div class="pg-toggle-row">
+      <label class="pg-toggle"><input type="checkbox" id="opt-upper" checked /> Uppercase (A–Z)</label>
+      <label class="pg-toggle"><input type="checkbox" id="opt-lower" checked /> Lowercase (a–z)</label>
+      <label class="pg-toggle"><input type="checkbox" id="opt-num" checked /> Numbers (0–9)</label>
+      <label class="pg-toggle"><input type="checkbox" id="opt-sym" checked /> Symbols (!@#...)</label>
+      <label class="pg-toggle"><input type="checkbox" id="opt-noamb" /> Exclude ambiguous (0, O, l, 1)</label>
+    </div>
+
+    <button class="pg-gen" onclick="generate()">Generate password</button>
+
+    <div id="history-section" style="display:none;">
+      <div class="pg-history-label">Recent passwords</div>
+      <div id="history-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const ambiguous = new Set(['0','O','l','1','I']);
+  let history = [];
+
+  function generate() {
+    const len = parseInt(document.getElementById('len').value);
+    const upper = document.getElementById('opt-upper').checked;
+    const lower = document.getElementById('opt-lower').checked;
+    const num   = document.getElementById('opt-num').checked;
+    const sym   = document.getElementById('opt-sym').checked;
+    const noAmb = document.getElementById('opt-noamb').checked;
+
+    if (!upper && !lower && !num && !sym) {
+      document.getElementById('pw').textContent = 'Select at least one character type';
+      return;
+    }
+
+    let pool = '';
+    let guaranteed = [];
+
+    if (upper) { let s = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'; if (noAmb) s = s.split('').filter(c=>!ambiguous.has(c)).join(''); pool += s; if (s) guaranteed.push(randChar(s)); }
+    if (lower) { let s = 'abcdefghijklmnopqrstuvwxyz'; if (noAmb) s = s.split('').filter(c=>!ambiguous.has(c)).join(''); pool += s; if (s) guaranteed.push(randChar(s)); }
+    if (num)   { let s = '0123456789'; if (noAmb) s = s.split('').filter(c=>!ambiguous.has(c)).join(''); pool += s; if (s) guaranteed.push(randChar(s)); }
+    if (sym)   { let s = '!@#$%^&*()-_=+[]{}|;:,.<>?'; pool += s; guaranteed.push(randChar(s)); }
+
+    if (!pool) { document.getElementById('pw').textContent = 'No characters available'; return; }
+
+    const arr = new Uint8Array(len * 2);
+    crypto.getRandomValues(arr);
+    let chars = guaranteed.slice(0, Math.min(guaranteed.length, len));
+    for (let i = chars.length; i < len; i++) {
+      chars.push(pool[arr[i] % pool.length]);
+    }
+    shuffle(chars);
+    const pw = chars.join('');
+    document.getElementById('pw').textContent = pw;
+
+    showStrength(pw, pool.length);
+    addHistory(pw);
+    document.getElementById('copy-btn').textContent = 'Copy';
+  }
+
+  function randChar(s) {
+    const arr = new Uint8Array(1);
+    crypto.getRandomValues(arr);
+    return s[arr[0] % s.length];
+  }
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = new Uint8Array(1);
+      crypto.getRandomValues(j);
+      const k = j[0] % (i + 1);
+      [arr[i], arr[k]] = [arr[k], arr[i]];
+    }
+  }
+
+  function showStrength(pw, poolSize) {
+    const row = document.getElementById('strength-row');
+    row.classList.add('visible');
+    const entropy = Math.log2(Math.pow(poolSize, pw.length));
+    let level, label, color;
+    if (entropy < 40)      { level = 1; label = 'Weak';        color = '#E24B4A'; }
+    else if (entropy < 60) { level = 2; label = 'Fair';        color = '#EF9F27'; }
+    else if (entropy < 80) { level = 3; label = 'Strong';      color = '#1D9E75'; }
+    else                   { level = 4; label = 'Very strong'; color = '#534AB7'; }
+
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById('b' + i).style.background = i <= level ? color : 'var(--color-border-tertiary)';
+    }
+    const lbl = document.getElementById('strength-label');
+    lbl.textContent = label;
+    lbl.style.color = color;
+  }
+
+  function addHistory(pw) {
+    history.unshift(pw);
+    if (history.length > 5) history.pop();
+    document.getElementById('history-section').style.display = 'block';
+    document.getElementById('history-list').innerHTML = history.map(p =>
+      `<div class="pg-hist-item">
+        <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px;">${p}</span>
+        <button class="pg-hist-copy" onclick="copyText(this.dataset.pw)" data-pw="${p}">copy</button>
+      </div>`
+    ).join('');
+  }
+
+  function copyPw() {
+    const pw = document.getElementById('pw').textContent;
+    if (!pw || pw.startsWith('Click') || pw.startsWith('Select') || pw.startsWith('No')) return;
+    copyText(pw);
+    document.getElementById('copy-btn').textContent = 'Copied!';
+    setTimeout(() => document.getElementById('copy-btn').textContent = 'Copy', 1500);
+  }
+
+  function copyText(text) {
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+</script>
+</body>
+</html>
